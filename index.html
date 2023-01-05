@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ajax address VietNam</title>
+    <style>
+      .select {
+        width: 30%;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="select">
+      <h4>Thành phố</h4>
+      <select name="city" id="select-city"></select>
+    </div>
+    <div class="select">
+      <h4>Quận / Huyện</h4>
+      <select name="district" id="select-district"></select>
+    </div>
+    <div class="select">
+      <h4>Phường / Xã</h4>
+      <select name="ward" id="select-ward"></select>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.3/jquery.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        $("#select-district").select2();
+        $("#select-city").select2();
+        $("#select-ward").select2();
+
+        $.ajax({
+          url: "https://vapi.vnappmob.com/api/province",
+          success: function (response) {
+            response.results.forEach((each, index) => {
+              $("#select-city").append(`
+                            <option data-province_id='${each.province_id}'>
+                                ${each.province_name}
+                            </option>`);
+            });
+
+            const province_id = $("#select-city option:selected").data(
+              "province_id"
+            );
+
+            $.ajax({
+              url:
+                "https://vapi.vnappmob.com/api/province/district/" +
+                province_id,
+              success: function (response) {
+                response.results.forEach((each, index) => {
+                  $("#select-district").append(`
+                                    <option data-district_id = '${each.district_id}'>
+                                        ${each.district_name}
+                                    </option>`);
+                });
+
+                const district_id = $("#select-district option:selected").data(
+                  "district_id"
+                );
+
+                $.ajax({
+                  url:
+                    "https://vapi.vnappmob.com/api/province/ward/" +
+                    district_id,
+                  success: function (response) {
+                    response.results.forEach((each, index) => {
+                      $("#select-ward").append(`
+                                            <option>
+                                                ${each.ward_name}
+                                            </option>`);
+                    });
+                  },
+                });
+              },
+            });
+          },
+        });
+
+        $("#select-city").change(function () {
+          const province_id = $("#select-city option:selected").data(
+            "province_id"
+          );
+          $.ajax({
+            url:
+              "https://vapi.vnappmob.com/api/province/district/" + province_id,
+            success: function (response) {
+              $("#select-district").empty();
+              district_id = -1;
+              response.results.forEach((each, index) => {
+                $("#select-district").append(`
+                                <option data-district_id = '${each.district_id}'>
+                                    ${each.district_name}
+                                </option>`);
+                if (district_id === -1) district_id = each.district_id;
+              });
+
+              console.log(district_id);
+
+              $.ajax({
+                url:
+                  "https://vapi.vnappmob.com/api/province/ward/" + district_id,
+                success: function (response) {
+                  $("#select-ward").empty();
+                  response.results.forEach((each, index) => {
+                    $("#select-ward").append(`
+                                            <option>
+                                                ${each.ward_name}
+                                            </option>`);
+                  });
+                },
+              });
+            },
+          });
+        });
+
+        $("#select-district").change(function () {
+          const district_id = $("#select-district option:selected").data(
+            "district_id"
+          );
+          $.ajax({
+            url: "https://vapi.vnappmob.com/api/province/ward/" + district_id,
+            success: function (response) {
+              $("#select-ward").empty();
+
+              response.results.forEach((each, index) => {
+                $("#select-ward").append(`
+                                <option>
+                                    ${each.ward_name}
+                                </option>`);
+              });
+            },
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
